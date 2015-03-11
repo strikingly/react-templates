@@ -180,7 +180,7 @@ function generateProps(node, context) {
         if (props.hasOwnProperty(propKey)) {
             throw RTCodeError.build('duplicate definition of ' + propKey + ' ' + JSON.stringify(node.attribs), context, node);
         }
-        if (_.contains(skippedProps, key) {
+        if (_.contains(skippedProps, key)) {
           // if the prop can be skipped
         } else if (key.indexOf('on') === 0 && !isStringOnlyCode(val)) {
             var funcParts = val.split('=>');
