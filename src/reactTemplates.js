@@ -47,7 +47,7 @@ var ifProp = 'rt-if';
 var classSetProp = 'rt-class';
 var scopeProp = 'rt-scope';
 var propsProp = 'rt-props';
-
+var skippedProps = ["data-bind"]
 var defaultOptions = {modules: 'amd', version: false, force: false, format: 'stylish', targetVersion: '0.12.2'};
 
 /**
@@ -180,7 +180,9 @@ function generateProps(node, context) {
         if (props.hasOwnProperty(propKey)) {
             throw RTCodeError.build('duplicate definition of ' + propKey + ' ' + JSON.stringify(node.attribs), context, node);
         }
-        if (key.indexOf('on') === 0 && !isStringOnlyCode(val)) {
+        if (_.contains(skippedProps, key) {
+          // if the prop can be skipped
+        } else if (key.indexOf('on') === 0 && !isStringOnlyCode(val)) {
             var funcParts = val.split('=>');
             if (funcParts.length !== 2) {
                 throw RTCodeError.build("when using 'on' events, use lambda '(p1,p2)=>body' notation or use {} to return a callback function. error: [" + key + "='" + val + "']", context, node);
