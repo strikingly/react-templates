@@ -47,8 +47,9 @@ var ifProp = 'rt-if';
 var classSetProp = 'rt-class';
 var scopeProp = 'rt-scope';
 var propsProp = 'rt-props';
+var skippedProps = ["data-bind"]
+var defaultOptions = {modules: 'amd', enableSkipRequire: 'false', version: false, force: false, format: 'stylish', targetVersion: '0.12.2'};
 
-var defaultOptions = {modules: 'amd', version: false, force: false, format: 'stylish', targetVersion: '0.12.2'};
 
 /**
  * @param {Context} context
@@ -180,7 +181,9 @@ function generateProps(node, context) {
         if (props.hasOwnProperty(propKey)) {
             throw RTCodeError.build('duplicate definition of ' + propKey + ' ' + JSON.stringify(node.attribs), context, node);
         }
-        if (key.indexOf('on') === 0 && !isStringOnlyCode(val)) {
+        if (_.contains(skippedProps, key)) {
+          // if the prop can be skipped
+        } else if (key.indexOf('on') === 0 && !isStringOnlyCode(val)) {
             var funcParts = val.split('=>');
             if (funcParts.length !== 2) {
                 throw RTCodeError.build("when using 'on' events, use lambda '(p1,p2)=>body' notation or use {} to return a callback function. error: [" + key + "='" + val + "']", context, node);
@@ -315,7 +318,7 @@ function convertHtmlToReact(node, context) {
                 data.props = propsTemplateSimple({generatedProps: data.props, rtProps: node.attribs[propsProp]});
             } else {
                 data.props = propsTemplate({generatedProps: data.props, rtProps: node.attribs[propsProp]});
-                if (!_.contains(context.injectedFunctions, propsMergeFunction)) {
+                if (!_.contains(context.injectedFunctions,propsMergeFunction)) {
                     context.injectedFunctions.push(propsMergeFunction);
                 }
             }
@@ -418,7 +421,11 @@ function convertTemplateToReact(html, options) {
             //if (options.modules === 'typescript') {
             //    defines['./' + tag.attribs.dependency] = tag.attribs.as;
             //} else {
-            defines[tag.attribs.dependency] = tag.attribs.as;
+            if ((options.enableSkipRequire == 'true') && (tag.attribs.skip == 'true')) {
+                return
+            } else {
+                defines[tag.attribs.dependency] = tag.attribs.as;
+            }
             //}
         } else if (firstTag === null) {
             firstTag = tag;
