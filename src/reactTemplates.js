@@ -278,6 +278,11 @@ function convertHtmlToReact(node, context) {
         };
 
         var data = {name: convertTagNameToConstructor(node.name, context)};
+
+        if (context.options.enableSkipRequire == 'true' && node.attribs.skip == 'true') {
+            return 'null'
+        }
+
         if (node.attribs[scopeProp]) {
             data.scopeMapping = {};
             data.scopeName = '';
