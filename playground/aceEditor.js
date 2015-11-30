@@ -1,12 +1,19 @@
 /**
  * Created by avim on 11/25/2014.
  */
-'use strict';
 /*global ace:true*/
-define(['react', 'lodash'/*, 'ace'*/], function (React, _/*, ace*/) {
-
-    var editor = React.createClass({
+define(['react', 'lodash']/*, 'ace'*/, function (React, _/*, ace*/) {
+    'use strict';
+    return React.createClass({
         displayName: 'BraceEditor',
+        propTypes: {
+            id: React.PropTypes.string,
+            mode: React.PropTypes.string,
+            readOnly: React.PropTypes.bool,
+            value: React.PropTypes.string,
+            valueLink: React.PropTypes.string,
+            onChange: React.PropTypes.function
+        },
         getInitialState: function () {
             return {
                 editorId: _.uniqueId()
@@ -29,10 +36,10 @@ define(['react', 'lodash'/*, 'ace'*/], function (React, _/*, ace*/) {
             this.editor = ace.edit(this.props.id || this.state.editorId);
 //        this.editor.setTheme('ace/theme/monokai');
             this.editor.setTheme('ace/theme/solarized_light');
-            if (this.props.mode !== 'html') {
-                this.editor.getSession().setMode('ace/mode/javascript');
-            } else {
+            if (this.props.mode === 'html') {
                 this.editor.getSession().setMode('ace/mode/html');
+            } else {
+                this.editor.getSession().setMode('ace/mode/javascript');
             }
             this.editor.getSession().setUseWorker(false);
 
@@ -56,6 +63,4 @@ define(['react', 'lodash'/*, 'ace'*/], function (React, _/*, ace*/) {
             this.editor.destroy();
         }
     });
-
-    return editor;
 });

@@ -1,19 +1,15 @@
 #!/usr/bin/env node
-/**
- * Created by idok on 11/10/14.
- */
 'use strict';
-//var fs = require('fs');
 var _ = require('lodash');
 var path = require('path');
 var api = require('./api');
 var context = require('./context');
 var shell = require('./shell');
 var pkg = require('../package.json');
-//var defaultOptions = {commonJS: false, force: false, json: false};
 var options = require('./options');
 var reactDOMSupport = require('./reactDOMSupport');
 var reactTemplates = require('./reactTemplates');
+var rtStyle = require('./rtStyle');
 
 function executeOptions(currentOptions) {
     var ret = 0;
@@ -53,18 +49,22 @@ function printVersions(currentOptions) {
  * @param {string} filename file name to process
  */
 function handleSingleFile(currentOptions, filename) {
-    if (path.extname(filename) !== '.rt') {
-        context.error('invalid file, only handle rt files', filename);
-        return;// only handle html files
-    }
     try {
-        var ext;
-        if (currentOptions.modules !== 'typescript') {
-            ext = '.js';
+        var sourceExt = path.extname(filename);
+        var outputFilename;
+        if (sourceExt === '.rt') {
+            outputFilename = filename + (currentOptions.modules === 'typescript' ? '.ts' : '.js');
+        } else if (sourceExt === '.jsrt') {
+            outputFilename = filename.replace(/\.jsrt$/, '.js');
+            currentOptions = _.assign({}, currentOptions, {modules: 'jsrt'});
+        } else if (sourceExt === '.rts') {
+            outputFilename = filename + '.js';
+            currentOptions = _.assign({}, currentOptions, {modules: 'rts'});
         } else {
-            ext = '.ts';
+            context.error('invalid file, only handle rt/jsrt files', filename);
+            return;
         }
-        api.convertFile(filename, filename + ext, currentOptions, context);
+        api.convertFile(filename, outputFilename, currentOptions, context);
     } catch (e) {
         context.error(e.message, filename, e.line, e.column, e.startOffset, e.endOffset);
     }
@@ -83,13 +83,14 @@ function execute(args) {
         console.error(error.message);
         return 1;
     }
-    //console.log(currentOptions);
     return executeOptions(currentOptions);
 }
 
 module.exports = {
+    context: context,
     execute: execute,
     executeOptions: executeOptions,
     handleSingleFile: handleSingleFile,
-    convertTemplateToReact: reactTemplates.convertTemplateToReact
+    convertTemplateToReact: reactTemplates.convertTemplateToReact,
+    convertStyle: rtStyle.convert
 };

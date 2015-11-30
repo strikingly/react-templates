@@ -13,16 +13,8 @@ module.exports = function (grunt) {
                     'test/src/**/*.js',
                     '!playground/libs/**/*.js',
                     '!playground/dist/**/*.js',
-                    '!playground/rt-main.browser.js',
                     '!playground/**/*.rt.js'
                 ]
-            },
-            teamcity: {
-                options: {
-                    format: 'checkstyle',
-                    'output-file': 'target/eslint.xml'
-                },
-                src: ['<%= eslint.all.src %>']
             }
         },
         jasmine_node: {
@@ -103,11 +95,9 @@ module.exports = function (grunt) {
     });
 
     function readConfig(file) {
-        /*eslint no-eval:0*/
-        return eval(require('fs').readFileSync(file).toString());
+        return eval(require('fs').readFileSync(file).toString()); // eslint-disable-line no-eval
     }
 
-    grunt.task.loadTasks('./internalTasks');
     grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-requirejs');
@@ -116,9 +106,8 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
 
     grunt.registerTask('default', ['eslint:all']);
+    grunt.registerTask('lint', ['eslint:all']);
     grunt.registerTask('test', ['node_tap']);
-
-    grunt.registerTask('teamcity', ['eslint:teamcity']);
 
     grunt.registerTask('rt', function () {
         var reactTemplates = require('./src/cli');

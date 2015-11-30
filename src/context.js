@@ -34,11 +34,16 @@ var context = {
     report: function (msg) {
         console.log(msg);
     },
+    verbose: function (msg) {
+        if (context.options.verbose) {
+            console.log(msg);
+        }
+    },
     info: function (msg, file, line, column) {
         context.issue(MESSAGE_LEVEL.INFO, msg, file, line, column);
     },
-    warn: function (msg, file, line, column) {
-        context.issue(MESSAGE_LEVEL.WARN, msg, file, line, column);
+    warn: function (msg, file, line, column, startOffset, endOffset) {
+        context.issue(MESSAGE_LEVEL.WARN, msg, file, line, column, startOffset, endOffset);
     },
     error: function (msg, file, line, column, startOffset, endOffset) {
         context.issue(MESSAGE_LEVEL.ERROR, msg, file, line, column, startOffset, endOffset);

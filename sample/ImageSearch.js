@@ -25,7 +25,7 @@ define([
             };
         },
 
-        search: function() {
+        search: function () {
             this.state.items = [[], [], []];
             this.total = 0;
             this.heights = [0, 0, 0];
@@ -34,35 +34,33 @@ define([
             this.loadMore();
         },
 
-        indexOfMin: function(array) {
-            var indexAndMin = _.reduce(array, function(accum, height, index) {
-                return (height < accum.min) ? { i: index, min: height } : accum;
+        indexOfMin: function (array) {
+            var indexAndMin = _.reduce(array, function (accum, height, index) {
+                /*eslint no-extra-parens:0*/
+                return (height < accum.min) ? {i: index, min: height} : accum;
             }, {i: -1, min: Number.MAX_VALUE});
             return indexAndMin.i;
         },
 
-        loadMore: function(done) {
-            done = done || function() {};
+        loadMore: function (done) {
+            done = done || function () {};
             if (!this.hasMore) {
                 done();
                 return;
             }
-            var url = 'https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=8&start=' + this.total + '&q=' + this.realTerm + "&callback=?";
+            var url = 'https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=8&start=' + this.total + '&q=' + this.realTerm + '&callback=?';
 
             var self = this;
             $.ajax({url: url, dataType: 'jsonp'})
-                .done(function(data){
+                .done(function (data) {
                     if (!data.responseData) {
                         self.hasMore = false;
                         done();
                         return;
                     }
                     var results = data.responseData.results;
-
                     var items = _.cloneDeep(self.state.items);
-
-                    for (var i = 0; i < results.length; i++) {
-                        var result = data.responseData.results[i];
+                    results.forEach(function (result) {
                         var minHeightIndex = self.indexOfMin(self.heights);
 
                         items[minHeightIndex].push({
@@ -73,17 +71,17 @@ define([
                             originalContext: result.originalContextUrl
                         });
 
-                        var relativeHeight = result.height / result.width;
-                        self.heights[minHeightIndex] = self.heights[minHeightIndex] + relativeHeight;
+                        self.heights[minHeightIndex] += result.height / result.width;
                         self.total++;
                         self.seq++;
-                    }
+                    });
+
                     self.setState({items: items});
                     done();
                 });
         },
 
-        shouldComponentUpdate: function(nextProps, nextState) {
+        shouldComponentUpdate: function (nextProps, nextState) {
             return !_.isEqual(this.state, nextState);
         },
 

@@ -1,21 +1,15 @@
 'use strict';
 var test = require('tape');
 var reactTemplates = require('../../src/reactTemplates');
+var context = require('../../src/context');
+var util = require('./util');
+var readFileNormalized = util.readFileNormalized;
+var compareAndWrite = util.compareAndWrite;
 var fs = require('fs');
 var _ = require('lodash');
 var path = require('path');
-var React = require('react/addons');
-var cheerio = require('cheerio');
 var RTCodeError = reactTemplates.RTCodeError;
 var dataPath = path.resolve(__dirname, '..', 'data');
-
-/**
- * @param {string} filename
- * @return {string}
- */
-function readFileNormalized(filename) {
-    return fs.readFileSync(filename).toString().replace(/\r/g, '').trim();
-}
 
 var invalidFiles = [
     {file: 'invalid-scope.rt', issue: new RTCodeError("invalid scope part 'a in a in a'", 0, 35, 1, 1)},
@@ -37,7 +31,7 @@ test('invalid tests', function (t) {
 
     function check(testFile) {
         var filename = path.join(dataPath, testFile.file);
-        var html = readFileNormalized(filename);
+        var html = util.readFileNormalized(filename);
         var error = null;
         try {
             reactTemplates.convertTemplateToReact(html);
@@ -63,7 +57,6 @@ function normalizeError(err) {
 
 test('invalid tests json', function (t) {
     var cli = require('../../src/cli');
-    var context = require('../../src/context');
     t.plan(invalidFiles.length);
 
     invalidFiles.forEach(check);
@@ -71,7 +64,7 @@ test('invalid tests json', function (t) {
     function check(testFile) {
         context.clear();
         var filename = path.join(dataPath, testFile.file);
-        var options = {format: 'json'};
+        var options = {format: 'json', force: true};
         cli.handleSingleFile(options, filename);
         t.deepEqual(normalizeError(context.getMessages()[0]), errorEqualMessage(testFile.issue, filename), 'Expect cli to produce valid output messages');
     }
@@ -101,31 +94,46 @@ function errorEqualMessage(err, file) {
 
 test('conversion test', function (t) {
     var files = ['div.rt', 'test.rt', 'repeat.rt', 'inputs.rt', 'require.rt'];
-    t.plan(files.length);
-    files.forEach(check);
-
-    function check(testFile) {
-        var filename = path.join(dataPath, testFile);
-        var html = readFileNormalized(filename);
-        var expected = readFileNormalized(filename + '.js');
-//        var expected = fs.readFileSync(filename.replace(".html", ".js")).toString();
-        var actual = reactTemplates.convertTemplateToReact(html).replace(/\r/g, '').trim();
-        compareAndWrite(t, actual, expected, filename);
-    }
+    testFiles(t, files);
 });
 
-/**
- * @param {*} t
- * @param {string} actual
- * @param {string} expected
- * @param {string} filename
- */
-function compareAndWrite(t, actual, expected, filename) {
-    t.equal(actual, expected);
-    if (actual !== expected) {
-        fs.writeFileSync(filename + '.actual.js', actual);
-    }
+test('prop template conversion test', function (t) {
+    var options = {
+        propTemplates: {
+            List: {
+                Row: {prop: 'renderRow', arguments: ['rowData']}
+            }
+        }
+    };
+    var files = ['propTemplates/simpleTemplate.rt', 'propTemplates/templateInScope.rt', 'propTemplates/implicitTemplate.rt', 'propTemplates/twoTemplates.rt'];
+    testFiles(t, files, options);
+});
+
+function checkFile(t, options, testFile) {
+    var filename = path.join(dataPath, testFile);
+    var html = readFileNormalized(filename);
+    var expected = readFileNormalized(filename + '.js');
+    var actual = reactTemplates.convertTemplateToReact(html, options).replace(/\r/g, '').trim();
+    compareAndWrite(t, actual, expected, filename);
 }
+
+function testFiles(t, files, options) {
+    t.plan(files.length);
+    files.forEach(checkFile.bind(this, t, options));
+}
+
+test('conversion test - native', function (t) {
+    var options = {
+        propTemplates: {
+            MyComp: {
+                Row: {prop: 'renderRow', arguments: ['rowData']}
+            }
+        },
+        native: true
+    };
+    var files = ['nativeView.rt', 'listViewTemplate.rt', 'listViewAndCustomTemplate.rt'];
+    testFiles(t, files, options);
+});
 
 test('convert div with all module types', function (t) {
     var files = [
@@ -148,50 +156,53 @@ test('convert div with all module types', function (t) {
     }
 });
 
-/**
- * @param {string} html
- * @return {string}
- */
-function normalizeHtml(html) {
-    return cheerio.load(html, {normalizeWhitespace: true}).html()
-        .replace(/\>\s+/mg, '>')
-        .replace(/\s+\</mg, '<')
-        .replace(/\>\s+\</mg, '><');
-}
+test('convert jsrt and test source results', function (t) {
+    var files = ['simple.jsrt'];
+    t.plan(files.length);
+    files.forEach(check);
+
+    function check(file) {
+        var filename = path.join(dataPath, file);
+        var js = readFileNormalized(filename);
+        var expected = readFileNormalized(path.join(dataPath, file.replace('.jsrt', '.js')));
+//        var expected = fs.readFileSync(filename.replace(".html", ".js")).toString();
+        var actual = reactTemplates.convertJSRTToJS(js, context).replace(/\r/g, '').trim();
+        compareAndWrite(t, actual, expected, filename);
+    }
+});
 
 test('html tests', function (t) {
-    var files = ['scope.rt', 'lambda.rt', 'eval.rt', 'props.rt', 'custom-element.rt', 'style.rt', 'concat.rt', 'js-in-attr.rt', 'props-class.rt'];
+    var files = ['scope.rt', 'scope-trailing-semicolon.rt', 'scope-variable-references.rt', 'lambda.rt', 'eval.rt', 'props.rt', 'custom-element.rt', 'style.rt', 'concat.rt',
+                 'js-in-attr.rt', 'props-class.rt', 'rt-class.rt', 'className.rt', 'svg.rt',
+                 'scope-evaluated-after-repeat.rt', 'scope-evaluated-after-repeat2.rt', 'scope-evaluated-after-if.rt', 'scope-obj.rt'
+    ];
     t.plan(files.length);
 
     files.forEach(check);
 
     function check(testFile) {
         var filename = path.join(dataPath, testFile);
-        var html = fs.readFileSync(filename).toString();
-        var expected = readFileNormalized(filename + '.html');
+        var code = '';
+        try {
+            var html = fs.readFileSync(filename).toString();
+            var expected = readFileNormalized(filename + '.html');
 //        var expected = fs.readFileSync(filename.replace(".html", ".js")).toString();
-        var code = reactTemplates.convertTemplateToReact(html).replace(/\r/g, '');
-        var defineMap = {'react/addons': React, lodash: _};
-        /*eslint no-unused-vars:0*/
-        var define = function (requirementsNames, content) {
-            var requirements = _.map(requirementsNames, function (reqName) {
-                return defineMap[reqName];
-            });
-            return content.apply(this, requirements);
-        };
-        var comp = React.createFactory(React.createClass({
-            /* eslint no-eval:0 */
-            render: eval(code)
-        }));
-        var actual = React.renderToStaticMarkup(comp());
-        actual = normalizeHtml(actual);
-        expected = normalizeHtml(expected);
-        compareAndWrite(t, actual, expected, filename);
+            code = reactTemplates.convertTemplateToReact(html).replace(/\r/g, '');
+            var actual = util.codeToHtml(code);
+            actual = util.normalizeHtml(actual);
+            expected = util.normalizeHtml(expected);
+            var equal = compareAndWrite(t, actual, expected, filename);
+            if (!equal) {
+                fs.writeFileSync(filename + '.code.js', code);
+            }
+        } catch (e) {
+            console.log(testFile, e);
+            fs.writeFileSync(filename + '.code.js', code);
+        }
     }
 });
 
 test('test context', function (t) {
-    var context = require('../../src/context');
     context.clear();
     t.equal(context.hasErrors(), false);
     context.error('hi', '', 1, 1);
@@ -204,9 +215,8 @@ test('test context', function (t) {
 
 test('test shell', function (t) {
     var shell = require('../../src/shell');
-    var context = require('../../src/context');
     var newContext = _.cloneDeep(context);
-    var outputJSON;
+    var outputJSON = '';
     newContext.options.format = 'json';
     newContext.report = function (text) {
         outputJSON = text;
@@ -231,19 +241,6 @@ test('test shell', function (t) {
 });
 
 test('test convertText', function (t) {
-    var texts = [
-        {input: '{}', expected: '()'},
-        {input: "a {'b'}", expected: '"a "+(\'b\')'}
-    ];
-    t.plan(texts.length);
-    texts.forEach(check);
-    function check(testData) {
-        var r = reactTemplates._test.convertText({}, {}, testData.input);
-        t.equal(r, testData.expected);
-    }
-});
-
-test('test convertText errors', function (t) {
     var texts = [
         {input: '{}', expected: '()'},
         {input: "a {'b'}", expected: '"a "+(\'b\')'}

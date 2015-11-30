@@ -1,4 +1,3 @@
-'use strict';
 define(['lodash', 'react', './examples.rt',
         'text!./samples/hello.code', 'text!./samples/hello.rt',
         'text!./samples/todo.code', 'text!./samples/todo.rt',
@@ -8,6 +7,7 @@ define(['lodash', 'react', './examples.rt',
         'text!./samples/weather.code', 'text!./samples/weather.rt',
         'text!./samples/rt-require.rt'
 ], function (_, React, examplesTemplate, helloCode, helloRT, todoCode, todoRT, rtIfCode, rtIfRT, rtPropsCode, rtPropsRT, rtRepeatCode, rtRepeatRT, weatherCode, weatherRT, rtRequireRT) {
+    'use strict';
     var samples = {
         hello: [helloCode, helloRT],
         todo: [todoCode, todoRT],
@@ -16,14 +16,14 @@ define(['lodash', 'react', './examples.rt',
         repeat: [rtRepeatCode, rtRepeatRT],
         weather: [weatherCode, weatherRT]
     };
-    //samples = _.map(samples, function (tuple) {
-    //    return {templateProps: tuple[0], templateHTML: tuple[1]};
+    //samples = _.map(samples, function (v, k) {
+    //    return {name: k, templateProps: _.template(v[0])({name: k}), templateHTML: v[1]};
     //});
-    Object.keys(samples).forEach(function (k) {
-        samples[k] = {name: k, templateProps: _.template(samples[k][0], {name: k}), templateHTML: samples[k][1]};
+    _.forEach(samples, function (v, k) {
+        samples[k] = {name: k, templateProps: _.template(v[0])({name: k}), templateHTML: v[1]};
     });
 
-    var Examples = React.createClass({
+    return React.createClass({
         displayName: 'Examples',
         mixins: [React.addons.LinkedStateMixin],
         getInitialState: function () {
@@ -40,6 +40,4 @@ define(['lodash', 'react', './examples.rt',
         },
         render: examplesTemplate
     });
-
-    return Examples;
 });

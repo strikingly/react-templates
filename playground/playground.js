@@ -30,7 +30,7 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
     }
 
     function clearMessage(editor) {
-        if (editor && editor.clearMessage) {
+        if (editor && editor.clearAnnotations) {
             editor.clearAnnotations();
         }
     }
@@ -70,9 +70,7 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
 
     var templateHTML = '<div></div>';
     var templateProps = 'var template = React.createClass({\n' +
-        '   render: function () {\n' +
-        '       return templateRT.apply(this);\n' +
-        '   }\n' +
+        '   render: templateRT\n' +
         '});';
 
     //var selfCleaningTimeout = {
@@ -92,7 +90,10 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
         propTypes: {
             direction: React.PropTypes.oneOf(['horizontal', 'vertical']),
             codeVisible: React.PropTypes.bool,
-            fiddle: React.PropTypes.bool
+            fiddle: React.PropTypes.bool,
+            templateHTML: React.PropTypes.string,
+            templateProps: React.PropTypes.string,
+            name: React.PropTypes.string
         },
         templateSource: '',
         validHTML: true,
@@ -110,7 +111,7 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
             };
         },
         getLayoutClass: function () {
-            return (this.props.direction === 'horizontal' && 'horizontal') || 'vertical';
+            return (this.props.direction === 'horizontal' && 'horizontal') || 'vertical'; //eslint-disable-line no-extra-parens
         },
         //executeCode: function() {
         //    var mountNode = this.refs.mount.getDOMNode();
@@ -154,16 +155,16 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
             //this.validHTML = this.sampleFunc !== emptyFunc;
             this.validHTML = true;
             this.sampleRender = generateRenderFunc(this.sampleFunc);
+            var editor;
             try {
                 this.validProps = true;
                 //console.log(state.templateProps);
-                /*eslint no-eval:0*/
-                this.sample = eval('(function () {' + this.templateSource + '\n' + state.templateProps + '\n return React.createElement(' + state.name + ');})()');
+                this.sample = eval('(function () {' + this.templateSource + '\n' + state.templateProps + '\n return React.createElement(' + state.name + ');})()'); //eslint-disable-line no-eval
                 clearMessage(this.refs.editorCode);
             } catch (e) {
                 this.validProps = false;
                 this.sample = null;
-                var editor = this.refs.editorCode;
+                editor = this.refs.editorCode;
                 this.showError(e, editor);
             }
             //classBase.render = this.sampleRender;
@@ -202,11 +203,11 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
             var editor = this.refs.editorRT;
             var name = window.reactTemplates.normalizeName(state.name) + 'RT';
             var code = null;
+            var annot = null;
             try {
                 code = window.reactTemplates.convertTemplateToReact(html.trim().replace(/\r/g, ''), {modules: 'none', name: name});
                 clearMessage(editor);
             } catch (e) {
-                var annot = null;
                 if (e.name === 'RTCodeError') {
                     //index: -1 line: -1 message: "Document should have a root element" name: "RTCodeError"
                     annot = {line: e.line, message: e.message, index: e.index};
@@ -246,7 +247,7 @@ define(['react', 'jquery', 'lodash', './playground-fiddle.rt', './playground.rt'
         componentDidUpdate: function () {
             this.renderSample();
         },
-        componentWillUnmount: function (){
+        componentWillUnmount: function () {
             window.removeEventListener('resize', this.calcSize);
         },
         calcSize: function () {

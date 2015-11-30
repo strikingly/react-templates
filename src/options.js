@@ -11,6 +11,7 @@
 var optionator = require('optionator');
 var pkg = require('../package.json');
 var reactDOMSupport = require('./reactDOMSupport');
+var reactNativeSupport = require('./reactNativeSupport');
 
 //------------------------------------------------------------------------------
 // Initialization and Public Interface
@@ -45,7 +46,7 @@ module.exports = optionator({
         alias: 'm',
         default: 'none',
         type: 'String',
-        description: 'Use output modules. (amd|commonjs|none|es6|typescript)'
+        description: 'Use output modules. (amd|commonjs|none|es6|typescript|jsrt)'
     }, {
         option: 'name',
         alias: 'n',
@@ -74,7 +75,7 @@ module.exports = optionator({
         option: 'target-version',
         alias: 't',
         type: 'String',
-        default: '0.12.2',
+        default: reactDOMSupport.default,
         description: 'React version to generate code for (' + Object.keys(reactDOMSupport).join(', ') + ')'
     }, {
         option: 'list-target-version',
@@ -91,5 +92,30 @@ module.exports = optionator({
         alias: 'k',
         type: 'Boolean',
         description: 'Show stack trace on errors.'
+    }, {
+        option: 'react-import-path',
+        default: 'react/addons',
+        type: 'String',
+        description: 'Dependency path for importing React.'
+    }, {
+        option: 'lodash-import-path',
+        default: 'lodash',
+        type: 'String',
+        description: 'Dependency path for importing lodash.'
+    }, {
+        option: 'native',
+        alias: 'rn',
+        type: 'Boolean',
+        description: 'Renders react native templates.'
+    }, {
+        option: 'flow',
+        type: 'Boolean',
+        description: 'Add /* @flow */ to the top of the generated file'
+    }, {
+        option: 'native-target-version',
+        alias: 'rnv',
+        type: 'String',
+        default: reactNativeSupport.default,
+        description: 'React native version to generate code for (' + Object.keys(reactNativeSupport).join(', ') + ')'
     }]
 });

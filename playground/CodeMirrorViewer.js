@@ -8,17 +8,15 @@ define(['react', 'lodash', 'jquery', './libs/codemirror-4.8/lib/codemirror',
         displayName: 'CodeMirrorViewer',
         propTypes: {
             id: React.PropTypes.string,
-            mode: React.PropTypes.string
+            mode: React.PropTypes.string,
+            value: React.PropTypes.string,
+            valueLink: React.PropTypes.string
         },
         getDefaultProps: function () {
-            return {
-                mode: 'html'
-            };
+            return {mode: 'html'};
         },
         getInitialState: function () {
-            return {
-                editorId: _.uniqueId()
-            };
+            return {editorId: _.uniqueId()};
         },
         render: function () {
             var props = _.omit(this.props, ['ref', 'key', 'value', 'valueLink', 'onChange']);
